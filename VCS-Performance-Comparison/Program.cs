@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -13,11 +14,15 @@ namespace VCS_Performance_Comparison
     {
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
+        // Specify the report full path for the experimentation
+        const string ReportPath = @"C:\Users\rashe\OneDrive\Desktop\test.csv";
         static void Main(string[] args)
         {
-            // Initialize the class to use or create the folder if doesn't exist
-            VCSPerformance performance = new VCSPerformance(VCSPerformance.VCS.mercurial, TargetLocation);
+            // Initialize the Version Control System class
+            VCSPerformance performance = new VCSPerformance(VCSPerformance.VCS.git, TargetLocation, ReportPath);
             performance.InitializeRepository();
+            performance.CreateDummyFileInDirectory(1); // 1 MB
+            performance.PerformOperation(VCSPerformance.Operation.pre_stage_status);
             //long memoryUsage;
             //float cpuUsage;
             //TimeSpan cpuTime;
@@ -30,12 +35,12 @@ namespace VCS_Performance_Comparison
             //process.StartInfo.RedirectStandardOutput = true;
             //process.StartInfo.RedirectStandardError = true;
             //process.Start();
-            //////* Read the output (or the error)
-            ////string output = process.StandardOutput.ReadToEnd();
-            ////Console.WriteLine(output);
-            ////string err = process.StandardError.ReadToEnd();
-            ////Console.WriteLine(err);
-            ////// Monitor resource usage
+            ////////* Read the output (or the error)
+            //////string output = process.StandardOutput.ReadToEnd();
+            //////Console.WriteLine(output);
+            //////string err = process.StandardError.ReadToEnd();
+            //////Console.WriteLine(err);
+            //////// Monitor resource usage
             //while (!process.HasExited)
             //{
             //    // Get memory and CPU usage
