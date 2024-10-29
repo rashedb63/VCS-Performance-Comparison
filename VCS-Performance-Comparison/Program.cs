@@ -1,13 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Git_Repositories_Performance_Comparison.Classes;
-using Newtonsoft.Json;
 
 namespace VCS_Performance_Comparison
 {
