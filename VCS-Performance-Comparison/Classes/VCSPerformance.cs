@@ -5,6 +5,8 @@ using System.IO;
 using System.Data;
 using System.Text;
 using System.Linq.Expressions;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace Git_Repositories_Performance_Comparison.Classes
 {
@@ -151,6 +153,8 @@ namespace Git_Repositories_Performance_Comparison.Classes
                     return PerformStageOperation();
                 case Operation.commit:
                     return PerformCommitOperation();
+                case Operation.post_change_status:
+                    return PerformPostChangeStatusOperation();
                 default:
                     return null;
             }
@@ -280,8 +284,64 @@ namespace Git_Repositories_Performance_Comparison.Classes
             metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
-            shared.DisplayMessage("The staging opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, repoting it now...", ConsoleColor.Green);
+            shared.DisplayMessage("The commit opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, reporting it now...", ConsoleColor.Green);
             return metrics;
+        }
+        private VCSPerformanceMetrics PerformPostChangeStatusOperation()
+        {
+            ChangeTheContentOfTheFiles();
+            shared.DisplayMessage("Performing status opertion on the \"" + VersionControlType + "\" repository...", ConsoleColor.White);
+            VCSPerformanceMetrics metrics = new VCSPerformanceMetrics();
+
+            Process process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git status" : "/c cd \"" + TargetFolder + "\" && hg status";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+
+            process.Start();
+            while (!process.HasExited)
+            {
+                // Get memory and CPU usage
+                metrics.MemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+                metrics.CpuTime = process.TotalProcessorTime;
+            }
+            // Final resource usage after the process exits
+            metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+            metrics.FinalCpuTime = process.TotalProcessorTime;
+            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+            process.WaitForExit();
+            metrics.RepositorySize = GetRepositorySize();
+            shared.DisplayMessage("The post change status opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, repoting it now...", ConsoleColor.Green);
+            return metrics;
+        }
+        private void ChangeTheContentOfTheFiles()
+        {
+            DirectoryInfo d = new DirectoryInfo(TargetFolder);
+            FileInfo[] Files = d.GetFiles("*.json");
+            List<VCSPerformanceJSONItem> items = null;
+            int fileNumber = 1;
+            string fileContent = File.ReadAllText(TargetFolder + @"\dummyfile_" + fileNumber + ".json");
+            var list = JsonConvert.DeserializeObject<List<VCSPerformanceJSONItem>>(fileContent);
+            var convertedJson = JsonConvert.SerializeObject(list, Formatting.Indented);
+            foreach (FileInfo file in Files)
+            {
+                shared.DisplayMessage("Changing the content of file #" + fileNumber, ConsoleColor.White);
+                // Initialize the file contnet list
+                items = new List<VCSPerformanceJSONItem>();
+                // Read the file content
+                fileContent = File.ReadAllText(TargetFolder + @"\dummyfile_" + fileNumber + ".json");
+                list = JsonConvert.DeserializeObject<List<VCSPerformanceJSONItem>>(fileContent);
+                // Replace the last item in the JSON file
+                list.RemoveAt(list.Count - 1);
+                list.Add(new VCSPerformanceJSONItem(999999, "Experimental Insertion", 999999));
+                convertedJson = JsonConvert.SerializeObject(list, Formatting.Indented);
+                // Write the JSON content back to the file
+                File.WriteAllText(TargetFolder + @"\dummyfile_" + fileNumber + ".json", Newtonsoft.Json.JsonConvert.SerializeObject(list, Newtonsoft.Json.Formatting.Indented));
+                fileNumber++;
+            }
         }
         private double GetDirectorySize(DirectoryInfo d)
         {

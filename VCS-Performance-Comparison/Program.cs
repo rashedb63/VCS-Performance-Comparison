@@ -7,15 +7,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Git_Repositories_Performance_Comparison.Classes;
+using Newtonsoft.Json;
 
 namespace VCS_Performance_Comparison
 {
     internal class Program
     {
         // Specify the VCS Type
-        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
+        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.mercurial;
         // Specify the Operation Type
-        const VCSPerformance.Operation operationType = VCSPerformance.Operation.stage;
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.post_change_status;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
@@ -23,7 +24,7 @@ namespace VCS_Performance_Comparison
         // Specify the file size in MB
         const double FileSize = 1;
         // Specify whether you want to split the file to multiple (Use 1 for a single file)
-        static double NumberOfFiles = 10;
+        static double NumberOfFiles = 1;
         // Specify the number of attempts
         const int OperationAttempts = 1;
         static void Main(string[] args)
@@ -34,9 +35,9 @@ namespace VCS_Performance_Comparison
             for (int i = 0; i < OperationAttempts; i++)
             {
                 performance.InitializeRepository();
-                if(NumberOfFiles > 1) // File needs to be splitted
+                if (NumberOfFiles > 1) // File needs to be splitted
                 {
-                    for(int j = 0; j < NumberOfFiles; j++)
+                    for (int j = 0; j < NumberOfFiles; j++)
                     {
                         performance.CreateDummyFileInDirectory(FileSize / NumberOfFiles, j + 1);
                     }
