@@ -12,61 +12,41 @@ namespace VCS_Performance_Comparison
 {
     internal class Program
     {
+        // Specify the VCS Type
+        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
+        // Specify the Operation Type
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.stage;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
-        const string ReportPath = @"C:\Users\rashe\OneDrive\Desktop\test.csv";
+        const string ReportPath = @"C:\Users\rashe\OneDrive\Desktop\Results";
+        // Specify the file size in MB
+        const double FileSize = 1;
+        // Specify whether you want to split the file to multiple (Use 1 for a single file)
+        static double NumberOfFiles = 10;
+        // Specify the number of attempts
+        const int OperationAttempts = 1;
         static void Main(string[] args)
         {
             // Initialize the Version Control System class
-            VCSPerformance performance = new VCSPerformance(VCSPerformance.VCS.git, TargetLocation, ReportPath);
-            performance.InitializeRepository();
-            performance.CreateDummyFileInDirectory(1); // 1 MB
-            performance.PerformOperation(VCSPerformance.Operation.pre_stage_status);
-            //long memoryUsage;
-            //float cpuUsage;
-            //TimeSpan cpuTime;
-            //PerformanceCounter cpuCounter;
-
-            //Process process = new Process();
-            //process.StartInfo.FileName = @"cmd.exe";
-            //process.StartInfo.Arguments = "/c cd Desktop"; // Note the /c command (*)
-            //process.StartInfo.UseShellExecute = false;
-            //process.StartInfo.RedirectStandardOutput = true;
-            //process.StartInfo.RedirectStandardError = true;
-            //process.Start();
-            ////////* Read the output (or the error)
-            //////string output = process.StandardOutput.ReadToEnd();
-            //////Console.WriteLine(output);
-            //////string err = process.StandardError.ReadToEnd();
-            //////Console.WriteLine(err);
-            //////// Monitor resource usage
-            //while (!process.HasExited)
-            //{
-            //    // Get memory and CPU usage
-            //    memoryUsage = process.WorkingSet64; // Memory in bytes
-            //    cpuTime = process.TotalProcessorTime;
-            //    cpuCounter = new PerformanceCounter("Process", "% Processor Time", Process.GetProcessById(process.Id).ProcessName);
-
-            //    // Get CPU usage after process execution
-            //    cpuUsage = cpuCounter.NextValue();
-
-            //    // Output the results
-            //    Console.WriteLine($"CPU Usage: {cpuUsage}%");
-
-            //    // Wait for a short interval before checking again
-            //    //Thread.Sleep(500);
-            //}
-
-            //// Final resource usage after the process exits
-            //long finalMemoryUsage = process.WorkingSet64;
-            //TimeSpan finalCpuTime = process.TotalProcessorTime;
-
-            //Console.WriteLine($"Final Memory Usage: {finalMemoryUsage / 1024} KB");
-            //Console.WriteLine($"Final CPU Time: {finalCpuTime.TotalMilliseconds} ms");
-
-            //process.WaitForExit(); // Optional: Wait for the process to exit completely
-
+            VCSPerformance performance = new VCSPerformance(versionControlType, TargetLocation);
+            VCSPerformanceReport report = new VCSPerformanceReport(ReportPath + @"\" + versionControlType + "_" + operationType + "_" + FileSize + "MB.csv");
+            for (int i = 0; i < OperationAttempts; i++)
+            {
+                performance.InitializeRepository();
+                if(NumberOfFiles > 1) // File needs to be splitted
+                {
+                    for(int j = 0; j < NumberOfFiles; j++)
+                    {
+                        performance.CreateDummyFileInDirectory(FileSize / NumberOfFiles, j + 1);
+                    }
+                }
+                else
+                {
+                    performance.CreateDummyFileInDirectory(FileSize, 1);
+                }
+                report.ExportReportRecord(performance.PerformOperation(operationType), i + 1);
+            }
             Console.Read();
         }
     }

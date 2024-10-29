@@ -45,6 +45,8 @@
   <ItemGroup>
     <Compile Include="Classes\VCSPerformance.cs" />
     <Compile Include="Classes\VCSPerformanceMetrics.cs" />
+    <Compile Include="Classes\VCSPerformanceReport.cs" />
+    <Compile Include="Classes\VCSPerformanceShared.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
