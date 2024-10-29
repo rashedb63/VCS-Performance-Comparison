@@ -20,10 +20,9 @@ namespace Git_Repositories_Performance_Comparison.Classes
             stage,
             commit,
             post_change_status,
-            log,
+            diff,
             branch,
-            merge,
-            diff
+            merge
         }
         private VCS VersionControlType;
         private string TargetFolder;
@@ -152,6 +151,8 @@ namespace Git_Repositories_Performance_Comparison.Classes
                     return PerformCommitOperation();
                 case Operation.post_change_status:
                     return PerformPostChangeStatusOperation();
+                case Operation.diff:
+                    return PerformDiffOperation();
                 default:
                     return null;
             }
@@ -287,7 +288,7 @@ namespace Git_Repositories_Performance_Comparison.Classes
         private VCSPerformanceMetrics PerformPostChangeStatusOperation()
         {
             ChangeTheContentOfTheFiles();
-            shared.DisplayMessage("Performing status opertion on the \"" + VersionControlType + "\" repository...", ConsoleColor.White);
+            shared.DisplayMessage("Performing post change status opertion on the \"" + VersionControlType + "\" repository...", ConsoleColor.White);
             VCSPerformanceMetrics metrics = new VCSPerformanceMetrics();
 
             Process process = new Process();
@@ -312,6 +313,36 @@ namespace Git_Repositories_Performance_Comparison.Classes
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
             shared.DisplayMessage("The post change status opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, repoting it now...", ConsoleColor.Green);
+            return metrics;
+        }
+        private VCSPerformanceMetrics PerformDiffOperation()
+        {
+            ChangeTheContentOfTheFiles();
+            shared.DisplayMessage("Performing diff opertion on the \"" + VersionControlType + "\" repository...", ConsoleColor.White);
+            VCSPerformanceMetrics metrics = new VCSPerformanceMetrics();
+
+            Process process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git diff" : "/c cd \"" + TargetFolder + "\" && hg diff";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+
+            process.Start();
+            while (!process.HasExited)
+            {
+                // Get memory and CPU usage
+                metrics.MemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+                metrics.CpuTime = process.TotalProcessorTime;
+            }
+            // Final resource usage after the process exits
+            metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+            metrics.FinalCpuTime = process.TotalProcessorTime;
+            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+            process.WaitForExit();
+            metrics.RepositorySize = GetRepositorySize();
+            shared.DisplayMessage("The diff opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, repoting it now...", ConsoleColor.Green);
             return metrics;
         }
         private void ChangeTheContentOfTheFiles()

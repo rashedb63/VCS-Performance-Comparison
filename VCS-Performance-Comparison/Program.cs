@@ -8,7 +8,7 @@ namespace VCS_Performance_Comparison
         // Specify the VCS Type
         const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.mercurial;
         // Specify the Operation Type
-        const VCSPerformance.Operation operationType = VCSPerformance.Operation.post_change_status;
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.diff;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
