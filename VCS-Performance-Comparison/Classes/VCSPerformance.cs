@@ -153,6 +153,10 @@ namespace Git_Repositories_Performance_Comparison.Classes
                     return PerformPostChangeStatusOperation();
                 case Operation.diff:
                     return PerformDiffOperation();
+                case Operation.branch:
+                    return PerformBranchOperation();
+                case Operation.merge:
+                    return PerformMergeOperation();
                 default:
                     return null;
             }
@@ -210,7 +214,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
             metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
             metrics.FinalCpuTime = process.TotalProcessorTime;
             metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
-            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
             shared.DisplayMessage("The status opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, repoting it now...", ConsoleColor.Green);
@@ -238,7 +241,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
             // Final resource usage after the process exits
             metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
             metrics.FinalCpuTime = process.TotalProcessorTime;
-            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
@@ -279,7 +281,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
             metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
             metrics.FinalCpuTime = process.TotalProcessorTime;
             metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
-            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
             shared.DisplayMessage("The commit opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, reporting it now...", ConsoleColor.Green);
@@ -308,7 +309,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
             // Final resource usage after the process exits
             metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
             metrics.FinalCpuTime = process.TotalProcessorTime;
-            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
@@ -339,11 +339,123 @@ namespace Git_Repositories_Performance_Comparison.Classes
             metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
             metrics.FinalCpuTime = process.TotalProcessorTime;
             metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
-            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
             process.WaitForExit();
             metrics.RepositorySize = GetRepositorySize();
             shared.DisplayMessage("The diff opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, repoting it now...", ConsoleColor.Green);
             return metrics;
+        }
+        private VCSPerformanceMetrics PerformBranchOperation()
+        {
+            shared.DisplayMessage("Performing branch opertion on the \"" + VersionControlType + "\" repository...", ConsoleColor.White);
+
+            // Stage & Commit the all files first
+            Process process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git add . && git commit -m \"Experimental Commit\"" : "/c cd \"" + TargetFolder + "\" && hg add . && hg commit -m \"Experimental Commit\"";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            while (!process.HasExited) { }
+            process.WaitForExit();
+
+            // Perform the branch now once committed
+            VCSPerformanceMetrics metrics = new VCSPerformanceMetrics();
+            process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git branch experimental_branch && git switch experimental_branch" : "/c cd \"" + TargetFolder + "\" && hg branch experimental_branch";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            while (!process.HasExited)
+            {
+                // Get memory and CPU usage
+                metrics.MemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+                metrics.CpuTime = process.TotalProcessorTime;
+            }
+            // Final resource usage after the process exits
+            metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+            metrics.FinalCpuTime = process.TotalProcessorTime;
+            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+            process.WaitForExit();
+            metrics.RepositorySize = GetRepositorySize();
+            // For mercurial only, you have to commit to the new branch in order to see it
+            if (VersionControlType == VCS.mercurial)
+            {
+                // Apply a slight change in order to stage & commit
+                ChangeTheContentOfTheFiles();
+                VCSPerformanceMetrics mercurialMetrics = new VCSPerformanceMetrics();
+                process = new Process();
+                process.StartInfo.FileName = @"cmd.exe";
+                process.StartInfo.Arguments = "/c cd \"" + TargetFolder + "\" && hg add . && hg commit -m \"Experimental Commit to Branch\"";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                while (!process.HasExited)
+                {
+                    // Get memory and CPU usage
+                    mercurialMetrics.MemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+                    mercurialMetrics.CpuTime = process.TotalProcessorTime;
+                }
+                // Final resource usage after the process exits
+                mercurialMetrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+                mercurialMetrics.FinalCpuTime = process.TotalProcessorTime;
+                mercurialMetrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+                process.WaitForExit();
+                metrics.MemoryUsage += mercurialMetrics.MemoryUsage;
+                metrics.CpuTime += mercurialMetrics.CpuTime;
+                metrics.FinalMemoryUsage += mercurialMetrics.FinalMemoryUsage;
+                metrics.FinalCpuTime += mercurialMetrics.FinalCpuTime;
+                metrics.FinalCpuTimeInMilliseconds += mercurialMetrics.FinalCpuTimeInMilliseconds;
+                metrics.RepositorySize = GetRepositorySize();
+            }
+            shared.DisplayMessage("The branch opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, reporting it now...", ConsoleColor.Green);
+            return metrics;
+        }
+        private VCSPerformanceMetrics PerformMergeOperation()
+        {
+            shared.DisplayMessage("Performing merge opertion on the \"" + VersionControlType + "\" repository...", ConsoleColor.White);
+
+            // Stage & Commit all files first
+            Process process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git add . && git commit -m \"Experimental Commit\"" : "/c cd \"" + TargetFolder + "\" && hg add . && hg commit -m \"Experimental Commit\"";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            while (!process.HasExited) { }
+            process.WaitForExit();
+
+            // Perform the branch now once committed
+            process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git branch experimental_branch && git switch experimental_branch" : "/c cd \"" + TargetFolder + "\" && hg branch experimental_branch";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            while (!process.HasExited){ }
+            process.WaitForExit();
+
+            // Apply a slight change to the file(s)
+            ChangeTheContentOfTheFiles();
+            
+            // Commit the new change to the new branch
+            process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git add . && git commit -m \"Experimental Commit to Branch\" && git switch main" : " /c cd \"" + TargetFolder + "\" && hg add . && hg commit -m \"Experimental Commit to Branch\" && hg update default";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            while (!process.HasExited){ }
+            process.WaitForExit();
+
+            shared.DisplayMessage("The merge opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, reporting it now...", ConsoleColor.Green);
+            return null;
         }
         private void ChangeTheContentOfTheFiles()
         {

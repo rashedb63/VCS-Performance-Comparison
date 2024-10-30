@@ -6,9 +6,9 @@ namespace VCS_Performance_Comparison
     internal class Program
     {
         // Specify the VCS Type
-        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.mercurial;
+        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
         // Specify the Operation Type
-        const VCSPerformance.Operation operationType = VCSPerformance.Operation.diff;
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.merge;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
