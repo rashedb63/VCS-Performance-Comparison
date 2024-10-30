@@ -454,8 +454,29 @@ namespace Git_Repositories_Performance_Comparison.Classes
             while (!process.HasExited){ }
             process.WaitForExit();
 
+            // Perform & report the merge operation now
+            process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git merge experimental_branch" : " /c cd \"" + TargetFolder + "\" && hg merge experimental_branch";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            VCSPerformanceMetrics metrics = new VCSPerformanceMetrics();
+            while (!process.HasExited) 
+            {
+                // Get memory and CPU usage
+                metrics.MemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+                metrics.CpuTime = process.TotalProcessorTime;
+            }
+            // Final resource usage after the process exits
+            metrics.FinalMemoryUsage = process.WorkingSet64 / 1024; // Memory in kb
+            metrics.FinalCpuTime = process.TotalProcessorTime;
+            metrics.FinalCpuTimeInMilliseconds = process.TotalProcessorTime.TotalMilliseconds;
+            process.WaitForExit();
+            metrics.RepositorySize = GetRepositorySize();
             shared.DisplayMessage("The merge opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, reporting it now...", ConsoleColor.Green);
-            return null;
+            return metrics;
         }
         private void ChangeTheContentOfTheFiles()
         {
