@@ -6,9 +6,9 @@ namespace VCS_Performance_Comparison
     internal class Program
     {
         // Specify the VCS Type
-        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.mercurial;
+        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
         // Specify the Operation Type
-        const VCSPerformance.Operation operationType = VCSPerformance.Operation.merge;
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.stage;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
@@ -17,15 +17,18 @@ namespace VCS_Performance_Comparison
         const double FileSize = 1;
         // Specify whether you want to split the file to multiple (Use 1 for a single file)
         static double NumberOfFiles = 1;
+        // Specify the number of commits to be made for the experiment
+        const int Commits = 1;
         // Specify the number of attempts
-        const int OperationAttempts = 1;
+        const int OperationAttempts = 50;
         static void Main(string[] args)
         {
             // Initialize the Version Control System class
-            VCSPerformance performance = new VCSPerformance(versionControlType, TargetLocation);
+            VCSPerformance performance = new VCSPerformance(versionControlType, TargetLocation, Commits);
             VCSPerformanceReport report = new VCSPerformanceReport(ReportPath + @"\" + versionControlType + "_" + operationType + "_" + FileSize + "MB.csv");
             for (int i = 0; i < OperationAttempts; i++)
             {
+                performance = new VCSPerformance(versionControlType, TargetLocation, Commits);
                 performance.InitializeRepository();
                 if (NumberOfFiles > 1) // File needs to be splitted
                 {

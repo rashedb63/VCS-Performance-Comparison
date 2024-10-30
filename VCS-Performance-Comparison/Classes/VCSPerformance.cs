@@ -26,33 +26,27 @@ namespace Git_Repositories_Performance_Comparison.Classes
         }
         private VCS VersionControlType;
         private string TargetFolder;
+        private int Commits;
         private VCSPerformanceShared shared;
 
         public VCSPerformance() { }
-        public VCSPerformance(VCS versionControlType, string targetFolder)
+        public VCSPerformance(VCS versionControlType, string targetFolder, int commits)
         {
-            try
+            shared = new VCSPerformanceShared();
+            TargetFolder = targetFolder;
+            if (!Directory.Exists(TargetFolder))
             {
-                shared = new VCSPerformanceShared();
-                TargetFolder = targetFolder;
-                if (!Directory.Exists(TargetFolder))
-                {
-                    shared.DisplayMessage("Target Directory for the experiment was not found. Creating it...", ConsoleColor.Green);
-                    System.IO.Directory.CreateDirectory(TargetFolder);
-                }
-                else
-                {
-                    shared.DisplayMessage("Target Directory already exists. Clearing the directory...", ConsoleColor.Yellow);
-                    ClearExperimentDirectory();
-                }
-                shared.DisplayMessage("Setting the version control to \"" + versionControlType + "\"...", ConsoleColor.Green);
-                VersionControlType = versionControlType;
+                shared.DisplayMessage("Target Directory for the experiment was not found. Creating it...", ConsoleColor.Green);
+                System.IO.Directory.CreateDirectory(TargetFolder);
             }
-            catch(Exception ex)
+            else
             {
-                shared.DisplayMessage("Error creating the experimentation directory and/or setting the version control type!", ConsoleColor.Red);
-                Console.WriteLine(ex.Message.ToString());
+                shared.DisplayMessage("Target Directory already exists. Clearing the directory...", ConsoleColor.Yellow);
+                ClearExperimentDirectory(TargetFolder);
             }
+            shared.DisplayMessage("Setting the version control to \"" + versionControlType + "\"...", ConsoleColor.Green);
+            VersionControlType = versionControlType;
+            Commits = commits;
         }
         public void SetExperimentDirectory(string targetFolder)
         {
@@ -80,57 +74,48 @@ namespace Git_Repositories_Performance_Comparison.Classes
         }
         public void InitializeRepository()
         {
-            try
+            if (VersionControlType == VCS.git)
             {
-                if (VersionControlType == VCS.git)
+                shared.DisplayMessage("Verifying if \"" + VersionControlType + "\" repository exists...", ConsoleColor.White);
+                if (System.IO.File.Exists(TargetFolder + @"\.git"))
                 {
-                    shared.DisplayMessage("Verifying if \"" + VersionControlType + "\" repository exists...", ConsoleColor.White);
-                    if (System.IO.File.Exists(TargetFolder + @"\.git"))
-                    {
-                        shared.DisplayMessage("An existing \"" + VersionControlType + "\" repository was detected. Deleting it to initialize a new one...", ConsoleColor.Yellow);
-                        System.IO.File.Delete(TargetFolder + @"\.git");
-                    }
-                    else
-                    {
-                        shared.DisplayMessage("An existing \"" + VersionControlType + "\" repository was detected. Deleting it to initialize a new one...", ConsoleColor.Yellow);
-                        System.IO.File.Delete(TargetFolder + @"\.hg");
-                    }
+                    shared.DisplayMessage("An existing \"" + VersionControlType + "\" repository was detected. Deleting it to initialize a new one...", ConsoleColor.Yellow);
+                    System.IO.File.Delete(TargetFolder + @"\.git");
                 }
-                shared.DisplayMessage("Initializing a new \"" + VersionControlType + "\" repository in the target directory...", ConsoleColor.White);
-                Process process = new Process();
-                process.StartInfo.FileName = @"cmd.exe";
-                process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git init" : "/c cd \"" + TargetFolder + "\" && hg init";
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.Start();
-                process.WaitForExit();
-                shared.DisplayMessage("\"" + VersionControlType + "\" repository has been successfully created in the target directory...", ConsoleColor.Green);
+                else
+                {
+                    shared.DisplayMessage("An existing \"" + VersionControlType + "\" repository was detected. Deleting it to initialize a new one...", ConsoleColor.Yellow);
+                    System.IO.File.Delete(TargetFolder + @"\.hg");
+                }
             }
-            catch(Exception ex)
-            {
-                shared.DisplayMessage("An error has occured while initializing the repository!", ConsoleColor.Red);
-                shared.DisplayMessage(ex.Message.ToString(), ConsoleColor.Red);
-            }
+            shared.DisplayMessage("Initializing a new \"" + VersionControlType + "\" repository in the target directory...", ConsoleColor.White);
+            Process process = new Process();
+            process.StartInfo.FileName = @"cmd.exe";
+            process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git init" : "/c cd \"" + TargetFolder + "\" && hg init";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.Start();
+            process.WaitForExit();
+            shared.DisplayMessage("\"" + VersionControlType + "\" repository has been successfully created in the target directory...", ConsoleColor.Green);
         }
-        public void ClearExperimentDirectory()
+        public void ClearExperimentDirectory(string TargetFolder)
         {
-            try
+            //System.IO.DirectoryInfo di = new DirectoryInfo(TargetFolder);
+            //foreach (FileInfo file in di.GetFiles())
+            //{
+            //    file.Delete();
+            //}
+            foreach (string file in Directory.GetFiles(TargetFolder))
             {
-                System.IO.DirectoryInfo di = new DirectoryInfo(TargetFolder);
-                foreach (FileInfo file in di.GetFiles())
-                {
-                    file.Delete();
-                }
-                foreach (DirectoryInfo dir in di.GetDirectories())
-                {
-                    dir.Delete(true);
-                }
+                File.SetAttributes(file, FileAttributes.Normal); // Remove read-only attribute
+                File.Delete(file);
             }
-            catch (Exception ex)
+
+            // Recursively delete all subdirectories
+            foreach (string dir in Directory.GetDirectories(TargetFolder))
             {
-                Console.WriteLine("Failed to clear the experimentation folder caused by: ");
-                Console.WriteLine(ex.Message.ToString());
+                ClearExperimentDirectory(dir);
             }
         }
         public void CreateDummyFileInDirectory(double sizeInMegaBytes, int fileNumber)
