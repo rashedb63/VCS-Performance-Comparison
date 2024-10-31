@@ -395,6 +395,25 @@ namespace Git_Repositories_Performance_Comparison.Classes
             while (!process.HasExited) { }
             process.WaitForExit();
 
+            // If number of commits is greater than one
+            int commitsCount = Commits - 1;
+
+            while (commitsCount > 0)
+            {
+                shared.DisplayMessage("(Multi-commit) Performing commit...", ConsoleColor.Blue);
+                ChangeTheContentOfTheFiles();
+                process = new Process();
+                process.StartInfo.FileName = @"cmd.exe";
+                process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git add . && git commit -m \"Experimental Commit\"" : "/c cd \"" + TargetFolder + "\" && hg add . && hg commit -m \"Experimental Commit\"";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                while (!process.HasExited) { }
+                process.WaitForExit();
+                commitsCount--;
+            }
+
             // Perform the branch now once committed
             process = new Process();
             process.StartInfo.FileName = @"cmd.exe";

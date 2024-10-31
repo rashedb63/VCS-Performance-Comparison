@@ -6,7 +6,7 @@ namespace VCS_Performance_Comparison
     internal class Program
     {
         // Specify the VCS Type
-        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
+        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.mercurial;
         // Specify the Operation Type
         const VCSPerformance.Operation operationType = VCSPerformance.Operation.branch;
         // Specify the target folder for the experimentation
