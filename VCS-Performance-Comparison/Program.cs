@@ -8,7 +8,7 @@ namespace VCS_Performance_Comparison
         // Specify the VCS Type
         const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
         // Specify the Operation Type
-        const VCSPerformance.Operation operationType = VCSPerformance.Operation.stage;
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.branch;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
@@ -18,9 +18,9 @@ namespace VCS_Performance_Comparison
         // Specify whether you want to split the file to multiple (Use 1 for a single file)
         static double NumberOfFiles = 1;
         // Specify the number of commits to be made for the experiment
-        const int Commits = 1;
+        const int Commits = 10;
         // Specify the number of attempts
-        const int OperationAttempts = 50;
+        const int OperationAttempts = 1;
         static void Main(string[] args)
         {
             // Initialize the Version Control System class

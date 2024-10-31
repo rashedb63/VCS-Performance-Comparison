@@ -27,6 +27,7 @@ namespace Git_Repositories_Performance_Comparison.Classes
         private VCS VersionControlType;
         private string TargetFolder;
         private int Commits;
+        private bool CommitToggle; // True means add new record, and false means remove record
         private VCSPerformanceShared shared;
 
         public VCSPerformance() { }
@@ -47,6 +48,7 @@ namespace Git_Repositories_Performance_Comparison.Classes
             shared.DisplayMessage("Setting the version control to \"" + versionControlType + "\"...", ConsoleColor.Green);
             VersionControlType = versionControlType;
             Commits = commits;
+            CommitToggle = true;
         }
         public void SetExperimentDirectory(string targetFolder)
         {
@@ -101,11 +103,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
         }
         public void ClearExperimentDirectory(string TargetFolder)
         {
-            //System.IO.DirectoryInfo di = new DirectoryInfo(TargetFolder);
-            //foreach (FileInfo file in di.GetFiles())
-            //{
-            //    file.Delete();
-            //}
             foreach (string file in Directory.GetFiles(TargetFolder))
             {
                 File.SetAttributes(file, FileAttributes.Normal); // Remove read-only attribute
@@ -117,12 +114,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
             {
                 ClearExperimentDirectory(dir);
             }
-        }
-        public void CreateDummyFileInDirectory(double sizeInMegaBytes, int fileNumber)
-        {
-            shared.DisplayMessage("Creating dummy JSON file of size " + sizeInMegaBytes + " Megabyte...", ConsoleColor.White);
-            CreateDummyJsonFile(TargetFolder + @"\dummyfile_" + fileNumber + ".json", sizeInMegaBytes * 1024 * 1024);
-            shared.DisplayMessage("Dummy JSON file of size " + sizeInMegaBytes + " Megabyte has been successfully created...", ConsoleColor.Green);
         }
         public VCSPerformanceMetrics PerformOperation(Operation operation)
         {
@@ -144,36 +135,6 @@ namespace Git_Repositories_Performance_Comparison.Classes
                     return PerformMergeOperation();
                 default:
                     return null;
-            }
-        }
-        private void CreateDummyJsonFile(string filePath, double size)
-        {
-            using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-            using (var writer = new StreamWriter(fs, Encoding.UTF8))
-            {
-                long writtenBytes = 0;
-                const string jsonTemplate = "{{\"id\":{0},\"name\":\"Name{0}\",\"value\":{1}}},";
-                int id = 0;
-                // Write JSON array start
-                writer.WriteLine("[");
-                writtenBytes += 2; // for the opening brackets
-
-                while (writtenBytes < size)
-                {
-                    // Create a JSON object
-                    string jsonLine = string.Format(jsonTemplate, id, new Random().Next(1, 1000));
-                    writer.Write(jsonLine);
-                    writtenBytes += jsonLine.Length;
-                    id++;
-                    // Add a new line for readability, if you want
-                    if (writtenBytes < size) // Avoid adding an extra comma at the end
-                    {
-                        writer.WriteLine();
-                    }
-                }
-                // Write JSON array end
-                writer.WriteLine("]");
-                writtenBytes += 2; // for the closing brackets
             }
         }
         private VCSPerformanceMetrics PerformPreStageStatusOperation()
@@ -344,6 +305,26 @@ namespace Git_Repositories_Performance_Comparison.Classes
             while (!process.HasExited) { }
             process.WaitForExit();
 
+            // If number of commits is greater than one
+            int commitsCount = Commits - 1;
+
+            while(commitsCount > 0)
+            {
+                shared.DisplayMessage("(Multi-commit) Performing commit...", ConsoleColor.Blue);
+                ChangeTheContentOfTheFiles();
+                process = new Process();
+                process.StartInfo.FileName = @"cmd.exe";
+                process.StartInfo.Arguments = VersionControlType == VCS.git ? "/c cd \"" + TargetFolder + "\" && git add . && git commit -m \"Experimental Commit\"" : "/c cd \"" + TargetFolder + "\" && hg add . && hg commit -m \"Experimental Commit\"";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                while (!process.HasExited) { }
+                process.WaitForExit();
+                commitsCount--;
+            }
+
+
             // Perform the branch now once committed
             VCSPerformanceMetrics metrics = new VCSPerformanceMetrics();
             process = new Process();
@@ -463,6 +444,12 @@ namespace Git_Repositories_Performance_Comparison.Classes
             shared.DisplayMessage("The merge opertion on the \"" + VersionControlType + "\" repository has bee successfully executed, reporting it now...", ConsoleColor.Green);
             return metrics;
         }
+        public void CreateDummyFileInDirectory(double sizeInMegaBytes, int fileNumber)
+        {
+            shared.DisplayMessage("Creating dummy JSON file of size " + sizeInMegaBytes + " Megabyte...", ConsoleColor.White);
+            CreateDummyJsonFile(TargetFolder + @"\dummyfile_" + fileNumber + ".json", sizeInMegaBytes * 1024 * 1024);
+            shared.DisplayMessage("Dummy JSON file of size " + sizeInMegaBytes + " Megabyte has been successfully created...", ConsoleColor.Green);
+        }
         private void ChangeTheContentOfTheFiles()
         {
             DirectoryInfo d = new DirectoryInfo(TargetFolder);
@@ -482,11 +469,49 @@ namespace Git_Repositories_Performance_Comparison.Classes
                 list = JsonConvert.DeserializeObject<List<VCSPerformanceJSONItem>>(fileContent);
                 // Replace the last item in the JSON file
                 list.RemoveAt(list.Count - 1);
-                list.Add(new VCSPerformanceJSONItem(999999, "Experimental Insertion", 999999));
+                if(CommitToggle)
+                {
+                    list.Add(new VCSPerformanceJSONItem(999999, "Experimental Insertion", 999999));
+                }
+                else
+                {
+                    list.RemoveAt(list.Count - 1);
+                }
                 convertedJson = JsonConvert.SerializeObject(list, Formatting.Indented);
                 // Write the JSON content back to the file
                 File.WriteAllText(TargetFolder + @"\dummyfile_" + fileNumber + ".json", Newtonsoft.Json.JsonConvert.SerializeObject(list, Newtonsoft.Json.Formatting.Indented));
                 fileNumber++;
+            }
+            CommitToggle = !CommitToggle;
+        }
+        private void CreateDummyJsonFile(string filePath, double size)
+        {
+            using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            using (var writer = new StreamWriter(fs, Encoding.UTF8))
+            {
+                long writtenBytes = 0;
+                const string jsonTemplate = "{{\"id\":{0},\"name\":\"Name{0}\",\"value\":{1}}},";
+                int id = 0;
+                // Write JSON array start
+                writer.WriteLine("[");
+                writtenBytes += 2; // for the opening brackets
+
+                while (writtenBytes < size)
+                {
+                    // Create a JSON object
+                    string jsonLine = string.Format(jsonTemplate, id, new Random().Next(1, 1000));
+                    writer.Write(jsonLine);
+                    writtenBytes += jsonLine.Length;
+                    id++;
+                    // Add a new line for readability, if you want
+                    if (writtenBytes < size) // Avoid adding an extra comma at the end
+                    {
+                        writer.WriteLine();
+                    }
+                }
+                // Write JSON array end
+                writer.WriteLine("]");
+                writtenBytes += 2; // for the closing brackets
             }
         }
         private double GetDirectorySize(DirectoryInfo d)
