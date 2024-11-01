@@ -6,21 +6,21 @@ namespace VCS_Performance_Comparison
     internal class Program
     {
         // Specify the VCS Type
-        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.mercurial;
+        const VCSPerformance.VCS versionControlType = VCSPerformance.VCS.git;
         // Specify the Operation Type
-        const VCSPerformance.Operation operationType = VCSPerformance.Operation.branch;
+        const VCSPerformance.Operation operationType = VCSPerformance.Operation.pre_stage_status;
         // Specify the target folder for the experimentation
         const string TargetLocation = @"C:\Users\rashe\OneDrive\Desktop\Experiment";
         // Specify the report full path for the experimentation
         const string ReportPath = @"C:\Users\rashe\OneDrive\Desktop\Results";
         // Specify the file size in MB
-        const double FileSize = 1;
+        const double FileSize = 10;
         // Specify whether you want to split the file to multiple (Use 1 for a single file)
         static double NumberOfFiles = 1;
         // Specify the number of commits to be made for the experiment
-        const int Commits = 10;
+        const int Commits = 1;
         // Specify the number of attempts
-        const int OperationAttempts = 1;
+        const int OperationAttempts = 50;
         static void Main(string[] args)
         {
             // Initialize the Version Control System class
